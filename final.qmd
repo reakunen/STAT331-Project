@@ -1,0 +1,60 @@
+---
+title: "Project: Analyzing World Happiness and GDP per Capita  "
+author: ["Brian Mai", "Suhanth Alluri", "Zaid (The King)", "Maxwell Silver"]
+format: html
+toc: true
+embed-resources: true
+code-tools: true
+execute:
+  echo: true
+  message: false
+  warning: false
+  error: true
+---
+
+Data is taken from the following sources:
+
+- [Gapminder](https://www.gapminder.org/data/documentation/gd001/)
+- [World Happiness Report](http://gapm.io/dhapiscore_whr)
+
+
+### Load appropriate libraries
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+```
+
+### Load the happiness score data 
+
+This is the national average response to the question of life evaluations asking the following “Please imagine a ladder, with steps numbered from 0 at the bottom to 10 at the top. The top of the ladder represents the best possible life for you and the bottom of the ladder represents the worst possible life for you. On which step of the ladder would you say you personally feel you stand at this time?” This measure is also referred to as Cantril life ladder. Gapminder has converted this indicator's scale from 0 to 100 to easly communicate it in terms of percentage. 
+
+More information of the data can be found [here](https://docs.google.com/spreadsheets/d/1Hh2E8PrDA9nzRY_ikBAF3MSKkHreEUVLXnjE3PtJVVA/edit?gid=501532268#gid=501532268)
+
+```{r}
+happiness_score_data <- read_csv("hapiscore_whr.csv")
+```
+
+### Load the gdp data 
+
+GDP per capita measures the value of everything produced in a country during a year, divided by the number of people. The unit is constant dollars adjusted for inflation in 2017’s prices. As the cost of living varies across countries, we use a currency called “international dollars”, which is adjusted for Purchasing Power Parity(PPP). This is a virtual currency that enables better comparisons. Such a dollar would buy in each country a comparable amount of goods and services as a U.S. dollar would buy in the United States. GDP per capita is the GDP divided by the population of the country, which gives a rough estimate of the average annual income of the citizens.
+
+More information of the data can be found [here](https://www.gapminder.org/data/documentation/gd001/)
+```{r}
+gdp_per_capita_data <- read_csv("gdp_pcap.csv")
+```
+
+## Data Relationship
+
+We will be using the following data to analyze the relationship between happiness and GDP per capita.
+Our hypothesis is that there is a positive relationship between happiness and GDP per capita.
+
+
+```{r}
+# Merge the data
+merged_data <- left_join(happiness_score_data, gdp_per_capita_data, by = c("country" = "country"))
+
+head(merged_data)
+``` 
+
