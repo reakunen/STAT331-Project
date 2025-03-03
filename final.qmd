@@ -1,7 +1,9 @@
 ---
 title: "Project: Analyzing World Happiness and GDP per Capita  "
 author: ["Brian Mai", "Suhanth Alluri", "Zaid Ruiz", "Maxwell Silver"]
-format: html
+format: 
+  html:
+    code-fold: true
 toc: true
 embed-resources: true
 code-tools: true
@@ -74,7 +76,7 @@ happiness_score_clean <- happiness_score |>
 We noticed that in the GDP per capita data some years had character values since their values used 'k' to denote thousands  (e.g., '24.5k' for 24,500). We cleaned this dataset by converting all such values to their exact numeric form, ensuring all data is now in a numeric data type. This way we are able to do computations with the GDP per capita data more easily.
 ```{r}
 gdp_per_capita_clean <- gdp_per_capita |>
-  mutate(across(`1800`:`2100`, ~ as.numeric(gsub("k", "e3", .))))
+  mutate(across(`1800`:`2100`, ~ as.numeric(str_replace_all(., "k", "e3"))))
 ```
 
 While some rows in both datasets contain NA values, we have decided to retain them in our clean datasets. If one variable is missing but the other is present, we choose to keep the row to allow us to analyze the trend of the variable with available data. If both variables are missing, we still retain the row to clearly indicate that the values are missing for that particular year.
