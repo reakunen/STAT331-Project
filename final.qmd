@@ -1,6 +1,6 @@
 ---
 title: "Project: Analyzing World Happiness and GDP per Capita  "
-author: ["Brian Mai", "Suhanth Alluri", "Zaid Ruiz", "Maxwell Silver"]
+author: ["Brian Mai", "Suhanth Alluri", "Zaíd Ruíz", "Maxwell Silver"]
 format: 
   html:
     code-fold: true
@@ -111,5 +111,6 @@ head(merged_data) |>
 We picked to analyze the relationship between happiness and GDP per capita because we were curious about the age old question: "Does money equal happiness?" 
 
 ### Hypothesis
+According to [Forbes](https://www.forbes.com/sites/johnjennings/2024/02/12/money-buys-happiness-after-all/), it seems like people's happiness, which seemed to increase up until a $75,000 salary is reached, may actually still be improved even after reaching an income above this perceieved threshold, thus proving that someone's happiness is strongly infuenced by their income.  
 
 Our hypothesis is that there is a strong positive correlation between happiness and GDP per capita. We expect that as GDP per capita increases, happiness score will also increase.
