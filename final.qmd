@@ -1,6 +1,6 @@
 ---
 title: "Project: Analyzing World Happiness and GDP per Capita  "
-author: ["Brian Mai", "Suhanth Alluri", "Zaíd Ruíz", "Maxwell Silver"]
+author: ["Suhanth Alluri", "Brian Mai", "Zaid Ruiz", "Maxwell Silver"]
 format: 
   html:
     code-fold: true
@@ -30,7 +30,7 @@ library(knitr)
 
 ### Load Happiness Score Data
 
-This dataset provides happiness score data for several countries across the years 2005 to 2023.
+This dataset provides happiness score data for several countries across the years 2005 to 2023. The observational unit for this dataset is the year.
 
 The happiness score is determined from the national average response to the question of life evaluations asking the following “Please imagine a ladder, with steps numbered from 0 at the bottom to 10 at the top. The top of the ladder represents the best possible life for you and the bottom of the ladder represents the worst possible life for you. On which step of the ladder would you say you personally feel you stand at this time?” This measure is also referred to as Cantril life ladder. Gapminder has converted this indicator's scale from 0 to 100 to easily communicate it in terms of percentage.
 
@@ -42,7 +42,7 @@ happiness_score <- read_csv("hapiscore_whr.csv")
 
 ### Load GDP Per Capita data
 
-This dataset provides GDP per capita data for several countries across the years 1800 to 2100. The future years' values are projceted GDP per capita values.
+This dataset provides GDP per capita data for several countries across the years 1800 to 2100. The future years' values are projceted GDP per capita values. The observational unit for this dataset is also the year.
 
 GDP per capita measures the value of everything produced in a country during a year, divided by the number of people. The unit is constant dollars adjusted for inflation in 2017’s prices. As the cost of living varies across countries, we use a currency called “international dollars”, which is adjusted for Purchasing Power Parity (PPP). This is a virtual currency that enables better comparisons. Such a dollar would buy in each country a comparable amount of goods and services as a U.S. dollar would buy in the United States. GDP per capita is the GDP divided by the population of the country, which gives a rough estimate of the average annual income of the citizens.
 
@@ -114,3 +114,39 @@ We picked to analyze the relationship between happiness and GDP per capita becau
 According to [Forbes](https://www.forbes.com/sites/johnjennings/2024/02/12/money-buys-happiness-after-all/), it seems like people's happiness, which seemed to increase up until a $75,000 salary is reached, may actually still be improved even after reaching an income above this perceieved threshold, thus proving that someone's happiness is strongly infuenced by their income.  
 
 Our hypothesis is that there is a strong positive correlation between happiness and GDP per capita. We expect that as GDP per capita increases, happiness score will also increase.
+
+
+## 2.1  Data Visualization
+
+```{r}
+
+ggplot(merged_data, mapping = aes(x = gdp_per_capita, y = happiness_score)) +
+  geom_point() +
+  labs(
+    x = "GDP Per Capita",
+    y = "",
+    title = "Happiness v. GDP per Capita",
+    subtitle = "Happiness Score",
+  ) + 
+  theme_minimal()
+
+#ggplot(merged_data, mapping = aes(x = year, y = ))
+  
+ggplot(merged_data, aes(x = gdp_per_capita, y = happiness_score)) +
+  geom_point(aes(color = country), alpha = 0.7) +
+  labs(
+    x = "GDP Per Capita",
+    y = "Happiness Score",
+    title = "Happiness vs. GDP Per Capita Over Time",
+    subtitle = "Year: {frame_time}",
+    color = "Country"
+  ) +
+  theme_minimal() +
+  transition_time(year) +
+  ease_aes("linear")
+```
+
+## 2.2  Linear Regression
+
+
+## 2.3  Model Fit
