@@ -196,6 +196,7 @@ $$
 ```{r}
 ggplot(lm_data, mapping = aes(x = avgGDP, y = avgHappiness)) +
   geom_point() +
+  xlim(0, 60000) +
   geom_jitter() + 
   geom_smooth(method = "lm") +
   labs(
