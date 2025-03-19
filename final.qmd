@@ -1,7 +1,9 @@
 ---
 title: "Project: Analyzing World Happiness and GDP per Capita  "
-author: ["Brian Mai", "Suhanth Alluri", "Zaid Ruiz", "Maxwell Silver"]
-format: html
+author: ["Suhanth Alluri", "Brian Mai", "Zaid Ruiz", "Maxwell Silver"]
+format: 
+  html:
+    code-fold: true
 toc: true
 embed-resources: true
 code-tools: true
@@ -24,13 +26,18 @@ Data is taken from the following sources:
 ```{r}
 library(tidyverse)
 library(knitr)
+library(patchwork)
+library(gganimate)
+library(gifski)
+library(broom)
+library(kableExtra)
 ```
 
 ### Load Happiness Score Data
 
-This dataset provides happiness score data for several countries across the years 2005 to 2023.
+This dataset provides happiness score data for several countries across the years 2005 to 2023. The observational unit for this dataset is the year.
 
-The happiness score is determined from the national average response to the question of life evaluations asking the following “Please imagine a ladder, with steps numbered from 0 at the bottom to 10 at the top. The top of the ladder represents the best possible life for you and the bottom of the ladder represents the worst possible life for you. On which step of the ladder would you say you personally feel you stand at this time?” This measure is also referred to as Cantril life ladder. Gapminder has converted this indicator's scale from 0 to 100 to easily communicate it in terms of percentage.
+The happiness score is determined from the national average response to the question of life evaluations asking the following "Please imagine a ladder, with steps numbered from 0 at the bottom to 10 at the top. The top of the ladder represents the best possible life for you and the bottom of the ladder represents the worst possible life for you. On which step of the ladder would you say you personally feel you stand at this time?" This measure is also referred to as Cantril life ladder. Gapminder has converted this indicator's scale from 0 to 100 to easily communicate it in terms of percentage.
 
 More information of the data can be found [here](https://docs.google.com/spreadsheets/d/1Hh2E8PrDA9nzRY_ikBAF3MSKkHreEUVLXnjE3PtJVVA/edit?gid=501532268#gid=501532268)
 
@@ -40,9 +47,9 @@ happiness_score <- read_csv("hapiscore_whr.csv")
 
 ### Load GDP Per Capita data
 
-This dataset provides GDP per capita data for several countries across the years 1800 to 2100. The future years' values are projceted GDP per capita values.
+This dataset provides GDP per capita data for several countries across the years 1800 to 2100. The future years' values are projceted GDP per capita values. The observational unit for this dataset is also the year.
 
-GDP per capita measures the value of everything produced in a country during a year, divided by the number of people. The unit is constant dollars adjusted for inflation in 2017’s prices. As the cost of living varies across countries, we use a currency called “international dollars”, which is adjusted for Purchasing Power Parity (PPP). This is a virtual currency that enables better comparisons. Such a dollar would buy in each country a comparable amount of goods and services as a U.S. dollar would buy in the United States. GDP per capita is the GDP divided by the population of the country, which gives a rough estimate of the average annual income of the citizens.
+GDP per capita measures the value of everything produced in a country during a year, divided by the number of people. The unit is constant dollars adjusted for inflation in 2017's prices. As the cost of living varies across countries, we use a currency called "international dollars", which is adjusted for Purchasing Power Parity (PPP). This is a virtual currency that enables better comparisons. Such a dollar would buy in each country a comparable amount of goods and services as a U.S. dollar would buy in the United States. GDP per capita is the GDP divided by the population of the country, which gives a rough estimate of the average annual income of the citizens.
 
 More information of the data can be found [here](https://www.gapminder.org/data/documentation/gd001/)
 
@@ -74,7 +81,7 @@ happiness_score_clean <- happiness_score |>
 We noticed that in the GDP per capita data some years had character values since their values used 'k' to denote thousands  (e.g., '24.5k' for 24,500). We cleaned this dataset by converting all such values to their exact numeric form, ensuring all data is now in a numeric data type. This way we are able to do computations with the GDP per capita data more easily.
 ```{r}
 gdp_per_capita_clean <- gdp_per_capita |>
-  mutate(across(`1800`:`2100`, ~ as.numeric(gsub("k", "e3", .))))
+  mutate(across(`1800`:`2100`, ~ as.numeric(str_replace_all(., "k", "e3"))))
 ```
 
 While some rows in both datasets contain NA values, we have decided to retain them in our clean datasets. If one variable is missing but the other is present, we choose to keep the row to allow us to analyze the trend of the variable with available data. If both variables are missing, we still retain the row to clearly indicate that the values are missing for that particular year.
@@ -109,5 +116,263 @@ head(merged_data) |>
 We picked to analyze the relationship between happiness and GDP per capita because we were curious about the age old question: "Does money equal happiness?" 
 
 ### Hypothesis
+According to [Forbes](https://www.forbes.com/sites/johnjennings/2024/02/12/money-buys-happiness-after-all/), it seems like people's happiness, which seemed to increase up until a $75,000 salary is reached, may actually still be improved even after reaching an income above this perceieved threshold, thus proving that someone's happiness is strongly infuenced by their income.  
 
 Our hypothesis is that there is a strong positive correlation between happiness and GDP per capita. We expect that as GDP per capita increases, happiness score will also increase.
+
+
+## 2.1  Data Visualization
+
+The scatterplot below shows the relationship between GDP per capita and happiness score for all years. From this plot we can see that there is a moderate positive relationship between the per capita GDP and happiness score. The majority of the data is clustered around the 0 to 30000 PPP GDP areas with around a 50 happiness score.
+
+```{r}
+
+ggplot(merged_data, mapping = aes(x = gdp_per_capita, y = happiness_score)) +
+  geom_point() +
+  labs(
+    x = "GDP Per Capita",
+    y = "",
+    title = "Happiness v. GDP per Capita",
+    subtitle = "Happiness Score",
+  ) + 
+  theme_minimal()
+```
+
+
+Below shows the relationship between GDP per capita and happiness for each year. We can see that the general relationship of the variables is similar across the years with the majority of points in the 0 to 30000 PPP range and lying around the 50 happiness score. Some years have more spread in their points while other years have more clustered fit, but there is not a clear change in the relationship over time.
+
+```{r}
+#| eval: False
+
+animated_plot <- ggplot(merged_data, aes(x = gdp_per_capita, y = happiness_score)) +
+  geom_point(alpha = 0.7) +
+  labs(
+    x = "GDP Per Capita (PPP)",
+    y = NULL,
+    title = "Happiness vs. GDP Per Capita -- {closest_state}",
+    subtitle = "Happiness Score"
+  ) +
+  theme_minimal() +
+  transition_states(year, transition_length = 16, state_length = 1)
+  ease_aes("linear")
+
+animated_gif <- animate(animated_plot, renderer = gifski_renderer(), width = 1000, height = 600, fps = 4, duration = 4)
+
+anim_save("happiness_vs_gdp.gif", animation = animated_gif)
+```
+![Happiness vs. GDP Per Capita Over Time](happiness_vs_gdp.gif)
+
+## 2.2  Linear Regression
+
+To take a deeper look at the relationship between GDP per capita and happiness score, we can fit the data to a linear regression model. Linear regression is a model where we fit our data to a linear equation of the format $response = intercept + slope \times explanatory + noise$. This will generate a line to represent the dataset and help us predict happiness score values with a GDP per capita value. For this model, we first took the average happiness score and GDP per capita values acoss all years for each country.
+
+
+```{r}
+lm_data <- merged_data |> 
+  #average happiness score across all years
+  group_by(country) |> 
+  summarise(avgHappiness = mean(happiness_score),
+            avgGDP = mean(gdp_per_capita)) 
+  
+```
+
+
+```{r}
+happiness_gdp_lm <- lm(avgHappiness ~ avgGDP, 
+                 data = lm_data)
+
+summary(happiness_gdp_lm)
+```
+
+```{r}
+tidy(happiness_gdp_lm) |> 
+  kable()
+```
+The intercept value of 46.8 represents the expected happiness score when GDP per capita is 0. The slope of 0.000524 means that for every 1 PPP increase in GDP per capita the happiness score increases by 0.000524 on average.
+
+$$
+\hat{y} = 46.8 + 0.000524 \cdot \text{GDP per Capita}
+$$
+
+```{r}
+p1 <- ggplot(lm_data, mapping = aes(x = avgGDP, y = avgHappiness)) +
+  geom_point() +
+  xlim(0, 60000) +
+  ylim(30, 80) +  
+  geom_jitter() + 
+  geom_smooth(method = "lm") +
+  labs(
+    x = "GDP Per Capita",
+    y = "",
+    title = "Happiness v. GDP per Capita",
+    subtitle = "Happiness Score",
+  ) + 
+  theme_minimal()
+
+p1
+```
+
+## 2.3  Model Fit
+
+```{r}
+
+
+model_data <- augment(happiness_gdp_lm)
+
+#Compute SpecifiedVariances
+response_variance <- var(model_data$avgHappiness, na.rm = TRUE)
+fitted_variance <- var(model_data$.fitted, na.rm = TRUE)
+residual_variance <- var(model_data$.resid, na.rm = TRUE)
+
+var_types <- c(
+  "Response" = response_variance,
+  "Fitted" = fitted_variance,
+  "Residual" = residual_variance
+)
+
+var_table <- enframe(var_types, "Variance Type", "Value") 
+
+var_table |> 
+  kable(col.names = c("Variance Type", "Value"),
+        caption = "Computed Variances of Linear Regression Model") |>
+  kable_styling(full_width = F,
+                bootstrap_options = "striped") |> 
+  row_spec(row = 0, bold = T, align = "c")
+```
+
+The proportion of the variability in the response values that was accounted for by our regression model is given by the Multiple R-squared from the summary of our model, which is 0.5392. R-squared is calculated as the proportion of variance of fitted values over response values, which also results in the same value given the table above (0.5392 = 62.85/116.55). This R-squared value states that around 53.92% of the variance in happiness scores is explained by GDP per Capita. Although GDP per capita seems to be a strong predictor of happiness, the remaining 46.08% of the variance is unexplained, suggesting that there are other factors outside of financial metrics that affect the happiness of an individual.
+
+## 3 Simulation
+
+In this section, we examine how well our linear regression model captures the relationship between GDP per capita and happiness scores by simulating data and comparing it to our observed data.
+
+### 3.1 Visualizing Simulations from the Model
+
+We first generate predictions from our regression model, then add random noise based on the estimated residual standard error to create simulated happiness scores.
+
+```{r}
+# Set seed 
+set.seed(4)
+
+lm_data_clean <- na.omit(lm_data)
+
+# Generate predictions from our model
+predictions <- predict(happiness_gdp_lm, newdata = lm_data_clean)
+
+# Get residual standard error from the model
+sigma_val <- sigma(happiness_gdp_lm)
+
+# Simulate new observations by adding random errors to predictions
+simulated_happiness <- predictions + rnorm(length(predictions), mean = 0, sd = sigma_val)
+
+# Create a dataset for plotting
+sim_data <- lm_data_clean |>
+  mutate(simulated_happiness = simulated_happiness)
+
+# Calculate regression lines for both datasets to compare slopes
+observed_model <- lm(avgHappiness ~ avgGDP, data = sim_data)
+simulated_model <- lm(simulated_happiness ~ avgGDP, data = sim_data)
+
+# Extract slopes for comparison
+observed_slope <- coef(observed_model)[2]
+simulated_slope <- coef(simulated_model)[2]
+
+# Extract R-squared values
+observed_r2 <- summary(observed_model)$r.squared
+simulated_r2 <- summary(simulated_model)$r.squared
+
+# Create a comparison table
+slope_comparison <- data.frame(
+  Model = c("Observed Data", "Simulated Data"),
+  Slope = c(observed_slope, simulated_slope),
+  Slope_Diff = c(NA, ((observed_slope - simulated_slope)/observed_slope * 100)),
+  R_Squared = c(observed_r2, simulated_r2),
+  R2_Diff = c(NA, ((observed_r2 - simulated_r2)/observed_r2 * 100))
+)
+
+# Display the slope comparison using gt instead of kable
+library(gt)
+slope_comparison |>
+  gt() |>
+  tab_header(
+    title = "Comparison of GDP-Happiness Relationship Metrics",
+    subtitle = "Slope Coefficients and R² Values"
+  ) |>
+  fmt_number(
+    columns = "Slope",
+    decimals = 6
+  ) |>
+  fmt_number(
+    columns = "Slope_Diff",
+    decimals = 2
+  ) |>
+  fmt_number(
+    columns = "R_Squared",
+    decimals = 4
+  ) |>
+  fmt_number(
+    columns = "R2_Diff",
+    decimals = 2
+  ) |>
+  fmt_missing(
+    columns = c("Slope_Diff", "R2_Diff"),
+    missing_text = "—"
+  ) |>
+  cols_label(
+    Slope = "Slope Coefficient",
+    Slope_Diff = "Slope % Difference",
+    R_Squared = "R² Value",
+    R2_Diff = "R² % Difference"
+  ) |>
+  tab_style(
+    style = cell_borders(sides = "bottom", weight = px(3)),
+    locations = cells_column_labels()
+  ) |>
+  tab_spanner(
+    label = "Slope Analysis",
+    columns = c("Slope", "Slope_Diff")
+  ) |>
+  tab_spanner(
+    label = "R² Analysis",
+    columns = c("R_Squared", "R2_Diff")
+  ) |>
+  tab_options(
+    table.width = pct(90),
+    column_labels.font.weight = "bold"
+  )
+
+# Plot observed data and simulated data side by side
+p1 <- ggplot(sim_data, aes(x = avgGDP, y = avgHappiness)) +
+  geom_point() +
+  xlim(0, 60000) +
+  ylim(30, 80) +
+  geom_smooth(method = "lm", color = "blue") +
+  labs(
+    x = "GDP Per Capita",
+    y = "Happiness Score",
+    title = "Observed Data"
+  ) +
+  theme_minimal()
+
+p2 <- ggplot(sim_data, aes(x = avgGDP, y = simulated_happiness)) +
+  geom_point() +
+  xlim(0, 60000) +
+  ylim(30, 80) +
+  geom_smooth(method = "lm", color = "orange") +
+  labs(
+    x = "GDP Per Capita",
+    y = "Happiness Score",
+    title = "Simulated Data"
+  ) +
+  theme_minimal()
+
+p1 + p2
+```
+
+The side-by-side plots show the relationship between GDP per capita and happiness scores for both our observed data (left) and a simulated dataset (right). In both datasets, they show a positive relationship, reflecting the fact that countries with higher GDP per capita tend to report higher happiness scores. They also have a similar R-squared .5392 for the observed, and .5081 for the simulated data, meaning that the simulated data is a good representation of the observed data.
+
+The difference includes the slope of the regression line. The slope of the regression line is steeper in the observed data than in the simulated data, as confirmed by our slope comparison table. This suggests that our linear model might be underestimating the strength of the relationship between GDP and happiness in certain ranges of the data.
+
+These differences highlight potential limitations in our simple linear model's ability to fully capture the complex relationship between economic prosperity and subjective well-being.
+
+### 3.2 Generating Multiple Predictive Checks
