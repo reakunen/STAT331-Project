@@ -132,12 +132,17 @@ Our hypothesis is that there is a strong positive correlation between happiness 
 The scatterplot below shows the relationship between GDP per capita and happiness score for all years. From this plot we can see that there is a moderate positive relationship between the per capita GDP and happiness score. The majority of the data is clustered around the 0 to 30000 PPP GDP areas with around a 50 happiness score.
 
 ```{r}
-
-plot2_1 <- merged_data |>
-  ggplot(mapping = aes(x = gdp_per_capita, y = happiness_score)) +
+lm_data <- merged_data |> 
+  #average happiness score across all years
+  group_by(country) |> 
+  summarise(avgHappiness = mean(happiness_score, na.rm = TRUE),
+            avgGDP = mean(gdp_per_capita, na.rm = TRUE)) 
+  
+plot2_1 <- lm_data |>
+  ggplot(mapping = aes(x = avgGDP, y = avgHappiness)) +
   geom_point() +
   labs(
-    x = "GDP Per Capita",
+    x = "GDP Per Capita (Intl. Dollar)",
     y = "",
     title = "Happiness v. GDP per Capita",
     subtitle = "Happiness Score",
@@ -156,7 +161,7 @@ Below shows the relationship between GDP per capita and happiness for each year.
 animated_plot <- ggplot(merged_data, aes(x = gdp_per_capita, y = happiness_score)) +
   geom_point(alpha = 0.7) +
   labs(
-    x = "GDP Per Capita (PPP)",
+    x = "GDP Per Capita (Intl. Dollar)",
     y = NULL,
     title = "Happiness vs. GDP Per Capita -- {closest_state}",
     subtitle = "Happiness Score"
@@ -175,29 +180,14 @@ anim_save("happiness_vs_gdp.gif", animation = animated_gif)
 
 To take a deeper look at the relationship between GDP per capita and happiness score, we can fit the data to a linear regression model. Linear regression is a model where we fit our data to a linear equation of the format $response = intercept + slope \times explanatory + noise$. This will generate a line to represent the dataset and help us predict happiness score values with a GDP per capita value. For this model, we first took the average happiness score and GDP per capita values acoss all years for each country.
 
-
-```{r}
-lm_data <- merged_data |> 
-  #average happiness score across all years
-  group_by(country) |> 
-  summarise(avgHappiness = mean(happiness_score, na.rm = TRUE),
-            avgGDP = mean(gdp_per_capita, na.rm = TRUE)) 
-  
-```
-
-
 ```{r}
 happiness_gdp_lm <- lm(avgHappiness ~ avgGDP, 
                  data = lm_data)
 
-summary(happiness_gdp_lm)
-```
-
-```{r}
 tidy(happiness_gdp_lm) |> 
   kable()
 ```
-The intercept value of 46.8 represents the expected happiness score when GDP per capita is 0. The slope of 0.000524 means that for every 1 PPP increase in GDP per capita the happiness score increases by 0.000524 on average.
+The intercept value of 46.8 represents the expected happiness score when GDP per capita is 0. The slope of 0.000524 means that for every 1000 international dollar increase in GDP per capita the happiness score increases by about half a point.
 
 $$
 \hat{y} = 46.8 + 0.000524 \cdot \text{GDP per Capita}
@@ -211,7 +201,7 @@ p1 <- ggplot(lm_data, mapping = aes(x = avgGDP, y = avgHappiness)) +
   geom_jitter() + 
   geom_smooth(method = "lm") +
   labs(
-    x = "GDP Per Capita",
+    x = "GDP Per Capita (Intl. Dollar)",
     y = "",
     title = "Happiness v. GDP per Capita",
     subtitle = "Happiness Score",
@@ -295,7 +285,7 @@ ggplot(full_data_long, aes(x = avgGDP, y = happiness_score)) +
              labeller = as_labeller(c(avgHappiness = "Observed Happiness", 
                                       sim_happiness = "Simulated Happiness"))) +
   labs(
-    x = "GDP Per Capita",
+    x = "GDP Per Capita (Intl. Dollar)",
     y = "Happiness Score",
     title = "Observed and Simulated Happiness v. GDP per Capita"
   ) +
@@ -308,6 +298,7 @@ The side-by-side plots show the relationship between GDP per capita and happines
 ### 3.2 Generating Multiple Predictive Checks
 
 ```{r}
+set.seed(4)
 
 sim_and_r_square <- function(observed_data, observed_lm){
     
@@ -334,9 +325,7 @@ sim_r_square <- map_dbl(.x = 1:1000,
                      .f = ~ sim_and_r_square(lm_data, happiness_gdp_lm))
 
 sim_r_squared_df <- enframe(sim_r_square, value = "r_squared") 
-```
 
-```{r}
 sim_r_squared_df |>
   ggplot(aes(x = r_squared)) +
   geom_histogram(bins = 10, color = "steelblue", fill="lightblue") +
@@ -348,4 +337,4 @@ sim_r_squared_df |>
 ```
 
 
-From this plot of the distribution we can see that the majority of the R-squared values from the simulated datasets, fall between 0.3 and 0.45 indicating that the linear regression model is not great to model the relationship between GDP per capita and Happiness score.
+From this plot of the distribution we can see that the majority of the R-squared values from the simulated datasets fall between 0.3 and 0.45 indicating that the linear regression provides a subpar fit to model the relationship between GDP per capita and Happiness score.
