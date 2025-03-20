@@ -61,7 +61,7 @@ gdp_per_capita <- read_csv("gdp_pcap.csv")
 
 ## 1.1 Data Cleaning
 
-We first started off by cleaning the happiness data set. We saw that the 2005 column was the only row with more than 80% of its values equal to NA.
+We first started off by cleaning the Happiness data set. We saw that the 2005 column was the only row with more than 80% of its values equal to NA. All other columns were below this threshold, as can be seen in the table below.
 
 ```{r}
 happiness_score |>
@@ -70,7 +70,12 @@ happiness_score |>
     cols = everything(),
     names_to = "column",
     values_to = "NA_more_80_percent") |>
-  kable()
+    mutate(NA_more_80_percent = ifelse( # https://stackoverflow.com/questions/60782273/cell-spec-for-conditional-cells
+      NA_more_80_percent, 
+      cell_spec("TRUE", color = "red", bold = TRUE), 
+      "FALSE"
+    )) |>
+  kable(col.names = c("Column Name", "Over 80% of row values NA"), escape = FALSE)
 ```
 
 To clean the data, we simply removed the 2005 column as it does not add many observations to our data.
