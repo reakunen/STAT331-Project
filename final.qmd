@@ -127,7 +127,8 @@ The scatterplot below shows the relationship between GDP per capita and happines
 
 ```{r}
 
-ggplot(merged_data, mapping = aes(x = gdp_per_capita, y = happiness_score)) +
+plot2_1 <- merged_data |>
+  ggplot(mapping = aes(x = gdp_per_capita, y = happiness_score)) +
   geom_point() +
   labs(
     x = "GDP Per Capita",
@@ -136,6 +137,8 @@ ggplot(merged_data, mapping = aes(x = gdp_per_capita, y = happiness_score)) +
     subtitle = "Happiness Score",
   ) + 
   theme_minimal()
+
+plot2_1
 ```
 
 
@@ -171,8 +174,8 @@ To take a deeper look at the relationship between GDP per capita and happiness s
 lm_data <- merged_data |> 
   #average happiness score across all years
   group_by(country) |> 
-  summarise(avgHappiness = mean(happiness_score),
-            avgGDP = mean(gdp_per_capita)) 
+  summarise(avgHappiness = mean(happiness_score, na.rm = TRUE),
+            avgGDP = mean(gdp_per_capita, na.rm = TRUE)) 
   
 ```
 
@@ -251,128 +254,66 @@ In this section, we examine how well our linear regression model captures the re
 We first generate predictions from our regression model, then add random noise based on the estimated residual standard error to create simulated happiness scores.
 
 ```{r}
-# Set seed 
-set.seed(4)
+#| layout-ncol: 2
 
-lm_data_clean <- na.omit(lm_data)
+pred_happiness <- predict(happiness_gdp_lm)
 
-# Generate predictions from our model
-predictions <- predict(happiness_gdp_lm, newdata = lm_data_clean)
-
-# Get residual standard error from the model
 sigma_val <- sigma(happiness_gdp_lm)
 
-# Simulate new observations by adding random errors to predictions
-simulated_happiness <- predictions + rnorm(length(predictions), mean = 0, sd = sigma_val)
+rand_error <- function(x, mean = 0, sd){
+  x + rnorm(length(x), 
+          mean, 
+          sd)
+}
 
-# Create a dataset for plotting
-sim_data <- lm_data_clean |>
-  mutate(simulated_happiness = simulated_happiness)
+simulated_happiness <- tibble(sim_happiness = rand_error(pred_happiness,
+                                                         sd = sigma_val))
 
-# Calculate regression lines for both datasets to compare slopes
-observed_model <- lm(avgHappiness ~ avgGDP, data = sim_data)
-simulated_model <- lm(simulated_happiness ~ avgGDP, data = sim_data)
+full_data <- lm_data |> 
+  na.omit() |>
+  select(country, avgGDP, avgHappiness) |> 
+  bind_cols(simulated_happiness)
 
-# Extract slopes for comparison
-observed_slope <- coef(observed_model)[2]
-simulated_slope <- coef(simulated_model)[2]
 
-# Extract R-squared values
-observed_r2 <- summary(observed_model)$r.squared
-simulated_r2 <- summary(simulated_model)$r.squared
+full_data_long <- full_data |> 
+  pivot_longer(cols = c(avgHappiness, sim_happiness), 
+               names_to = "happiness_type", 
+               values_to = "happiness_score")
 
-# Create a comparison table
-slope_comparison <- data.frame(
-  Model = c("Observed Data", "Simulated Data"),
-  Slope = c(observed_slope, simulated_slope),
-  Slope_Diff = c(NA, ((observed_slope - simulated_slope)/observed_slope * 100)),
-  R_Squared = c(observed_r2, simulated_r2),
-  R2_Diff = c(NA, ((observed_r2 - simulated_r2)/observed_r2 * 100))
-)
-
-# Display the slope comparison using gt instead of kable
-library(gt)
-slope_comparison |>
-  gt() |>
-  tab_header(
-    title = "Comparison of GDP-Happiness Relationship Metrics",
-    subtitle = "Slope Coefficients and R² Values"
-  ) |>
-  fmt_number(
-    columns = "Slope",
-    decimals = 6
-  ) |>
-  fmt_number(
-    columns = "Slope_Diff",
-    decimals = 2
-  ) |>
-  fmt_number(
-    columns = "R_Squared",
-    decimals = 4
-  ) |>
-  fmt_number(
-    columns = "R2_Diff",
-    decimals = 2
-  ) |>
-  fmt_missing(
-    columns = c("Slope_Diff", "R2_Diff"),
-    missing_text = "—"
-  ) |>
-  cols_label(
-    Slope = "Slope Coefficient",
-    Slope_Diff = "Slope % Difference",
-    R_Squared = "R² Value",
-    R2_Diff = "R² % Difference"
-  ) |>
-  tab_style(
-    style = cell_borders(sides = "bottom", weight = px(3)),
-    locations = cells_column_labels()
-  ) |>
-  tab_spanner(
-    label = "Slope Analysis",
-    columns = c("Slope", "Slope_Diff")
-  ) |>
-  tab_spanner(
-    label = "R² Analysis",
-    columns = c("R_Squared", "R2_Diff")
-  ) |>
-  tab_options(
-    table.width = pct(90),
-    column_labels.font.weight = "bold"
-  )
-
-# Plot observed data and simulated data side by side
-p1 <- ggplot(sim_data, aes(x = avgGDP, y = avgHappiness)) +
+ggplot(full_data_long, aes(x = avgGDP, y = happiness_score)) +
   geom_point() +
-  xlim(0, 60000) +
-  ylim(30, 80) +
-  geom_smooth(method = "lm", color = "blue") +
+  facet_wrap(vars(happiness_type), 
+             labeller = as_labeller(c(avgHappiness = "Observed Happiness", 
+                                      sim_happiness = "Simulated Happiness"))) +
   labs(
     x = "GDP Per Capita",
     y = "Happiness Score",
-    title = "Observed Data"
+    title = "Observed and Simulated Happiness v. GDP per Capita"
   ) +
   theme_minimal()
 
-p2 <- ggplot(sim_data, aes(x = avgGDP, y = simulated_happiness)) +
-  geom_point() +
-  xlim(0, 60000) +
-  ylim(30, 80) +
-  geom_smooth(method = "lm", color = "orange") +
-  labs(
-    x = "GDP Per Capita",
-    y = "Happiness Score",
-    title = "Simulated Data"
-  ) +
-  theme_minimal()
-
-p1 + p2
 ```
 
-The side-by-side plots show the relationship between GDP per capita and happiness scores for both our observed data (left) and a simulated dataset (right). In both datasets, they show a positive relationship, reflecting the fact that countries with higher GDP per capita tend to report higher happiness scores. They also have a similar R-squared .5392 for the observed, and .5081 for the simulated data, meaning that the simulated data is a good representation of the observed data.
-
-The difference includes the slope of the regression line. The slope of the regression line is steeper in the observed data than in the simulated data, as confirmed by our slope comparison table. This suggests that our linear model might be underestimating the strength of the relationship between GDP and happiness in certain ranges of the data.
-
-These differences highlight potential limitations in our simple linear model's ability to fully capture the complex relationship between economic prosperity and subjective well-being.
+The side-by-side plots show the relationship between GDP per capita and happiness scores for both our observed data (left) and a simulated dataset (right). In both datasets, they show a positive relationship, reflecting the fact that countries with higher GDP per capita tend to report higher happiness scores. In both plots, the data seems to be clustered around the 40 to 50 happiness score range at lower GDP per capita values, and become more spread as GDP per capita increases. However we can see that the points have a similar general shape.
 
 ### 3.2 Generating Multiple Predictive Checks
+
+```{r}
+
+sim_and_r_square <- function(observed_data, observed_lm){
+    
+  pred_happiness <- predict(observed_lm)
+  
+  sigma_val <- sigma(observed_lm)
+  
+  simulated_happiness <- tibble(sim_happiness = rand_error(pred_happiness,
+                                                           sd = sigma_val))
+  
+  full_data <- observed_data |> 
+    na.omit() |>
+    select(country, avgGDP, avgHappiness) |> 
+    bind_cols(simulated_happiness)
+}
+
+
+```
