@@ -1,5 +1,5 @@
 ---
-title: "Project: Analyzing World Happiness and GDP per Capita  "
+title: "Analyzing World Happiness and GDP per Capita  "
 author: ["Suhanth Alluri", "Brian Mai", "Zaid Ruiz", "Maxwell Silver"]
 format: 
   html:
@@ -14,11 +14,6 @@ execute:
   warning: false
   error: true
 ---
-
-## The Data
-
-
-
 
 ```{r}
 library(tidyverse)
@@ -38,24 +33,24 @@ library(kableExtra)
 Does money buy happiness? This is a question we were all asking ourselves, so we chose to explore the relationship between GDP per Capita and Happiness Score.
 
 ### Hypothesis
-According to [Forbes](https://www.forbes.com/sites/johnjennings/2024/02/12/money-buys-happiness-after-all/), it seems like people's happiness, which seemed to increase up until a $75,000 salary is reached, may actually still be improved even after reaching an income above this perceieved threshold, thus proving that someone's happiness is strongly infuenced by their income.  
+According to [Forbes](https://www.forbes.com/sites/johnjennings/2024/02/12/money-buys-happiness-after-all/), it seems like people's happiness, which seemed to increase up until a $75,000 salary is reached, may actually still be improved even after reaching an income above this perceieved threshold, thus proving that someone's happiness is strongly infuenced by their income. [@jennings_more_2024]
 
 Our hypothesis is that there is a strong positive correlation between happiness and GDP per capita. We expect that as GDP per capita increases, happiness score will also increase.
 
 ### Data Descriptions
 
+To analyze this question we will use two datasets, GDP per capita and happiness score.
+
 #### Happiness Dataset
 
-This dataset was found on Gapminder ()
-
-It provides happiness score data for several countries across the years 2005 to 2023. The observational unit for this dataset is the year.
+The happiness score data set provides happiness score data for several countries across the years 2005 to 2023. The observational unit for this dataset is the year.
 
 The happiness score is determined from the national average response to the question of life evaluations asking the following:
 
 > "Please imagine a ladder, with steps numbered from 0 at the bottom to 10 at the top. The top of the ladder represents the best possible life for you and the bottom of the ladder represents the worst possible life for you. On which step of the ladder would you say you personally feel you stand at this time?" 
 
-This measure is also referred to as Cantril Life Ladder @inc_understanding_2009
-. Gapminder has converted this indicator's scale from 0 to 100 to easily communicate it in terms of percentage (<<<<).
+This measure is also referred to as Cantril Life Ladder [@noauthorunderstanding2009]
+. These responses have been converted to a scale from 0 to 100 to easily communicate it in terms of percentage for this dataset [@n__whr-happiness_2024].
 
 
 ```{r}
@@ -64,9 +59,9 @@ happiness_score <- read_csv("hapiscore_whr.csv")
 
 #### GDP Per Capita Data
 
-This dataset provides GDP per capita data for several countries across the years 1800 to 2100. The future years' values are projceted GDP per capita values. The observational unit for this dataset is also the year.
+This dataset provides GDP per capita data for several countries across the years 1800 to 2100. The future years' values are projected GDP per capita values. The observational unit for this dataset is also the year.
 
-GDP per capita measures the value of everything produced in a country during a year, divided by the number of people. The unit is constant dollars adjusted for inflation in 2017's prices. As the cost of living varies across countries, we use a currency called "international dollars", which are adjusted for Purchasing Power Parity (PPP). International dollars are approximately equal to U.S. Dollars.
+GDP per capita measures the value of everything produced in a country during a year, divided by the number of people. The unit is constant dollars adjusted for inflation in 2017's prices. As the cost of living varies across countries, we use a currency called "international dollars", which are adjusted for Purchasing Power Parity (PPP). International dollars are approximately equal to U.S. Dollars. [@noauthor_gdp_2024]
 
 ```{r}
 gdp_per_capita <- read_csv("gdp_pcap.csv")
@@ -82,13 +77,15 @@ We found that, some rows in both datasets contain NA values, but we wanted to re
 We first started off by cleaning the Happiness data set. The table below illustrates all columns of the Happiness dataset, and whether or not over 80% of that column's values are NA.
 
 ```{r}
+# cell_spec from 
+# https://stackoverflow.com/questions/60782273/cell-spec-for-conditional-cells
 happiness_score |>
   summarise(across(everything(), ~ mean(is.na(.)) > 0.80)) |>
   pivot_longer(
     cols = everything(),
     names_to = "column",
     values_to = "NA_more_80_percent") |>
-    mutate(NA_more_80_percent = ifelse( # https://stackoverflow.com/questions/60782273/cell-spec-for-conditional-cells
+    mutate(NA_more_80_percent = ifelse(
       NA_more_80_percent, 
       cell_spec("TRUE", color = "red", bold = TRUE), 
       "FALSE"
@@ -108,13 +105,15 @@ We conducted the same check on the GDP per Capita dataset and found that none of
 ```{r}
 #| eval: False
 
+# cell_spec from
+# https://stackoverflow.com/questions/60782273/cell-spec-for-conditional-cells
 gdp_per_capita |>
   summarise(across(everything(), ~ mean(is.na(.)) > 0.80)) |>
   pivot_longer(
     cols = everything(),
     names_to = "column",
     values_to = "NA_more_80_percent") |>
-    mutate(NA_more_80_percent = ifelse( # https://stackoverflow.com/questions/60782273/cell-spec-for-conditional-cells
+    mutate(NA_more_80_percent = ifelse(
       NA_more_80_percent, 
       cell_spec("TRUE", color = "red", bold = TRUE), 
       "FALSE"
@@ -213,6 +212,8 @@ Below is a table containing the coefficients of our fitted linear model.
 happiness_gdp_lm <- lm(avgHappiness ~ avgGDP, 
                  data = lm_data)
 
+tidy(happiness_gdp_lm) |> 
+  kable()
 ```
 
 
@@ -222,12 +223,7 @@ happiness_gdp_lm <- lm(avgHappiness ~ avgGDP,
 summary(happiness_gdp_lm) 
 ```
 
-
-```{r}
-tidy(happiness_gdp_lm) |> 
-  kable()
-```
-The intercept value of 46.05 represents the expected happiness score when GDP per capita is 0. The slope of 0.000402 means that for every 1000 international dollar increase in GDP per capita the happiness score increases by about half a point.
+The intercept value of 46.05 represents the expected happiness score when GDP per capita is 0. The slope of 0.000402 means that for every 1000 international dollar increase in GDP per capita the happiness score increases by about half a point. An equation to represent the linear model is as follows:
 
 $$
 \hat{y} = 46.05 + 0.000402 \cdot \text{GDP per Capita}
@@ -282,7 +278,7 @@ var_table |>
   row_spec(row = 0, bold = T, align = "c")
 ```
 
-The proportion of the variability in the response values that was accounted for by our regression model is given by the Multiple R-squared from the summary of our model, which is 0.6003. R-squared is calculated as the proportion of variance of fitted values over response values, which also results in the same value given the table above (0.6003 = 68.12/113.46). This R-squared value states that around 60.03% of the variance in happiness scores is explained by GDP per Capita. Although GDP per capita seems to be a strong predictor of happiness, the remaining 39.97% of the variance is unexplained, suggesting that there are other factors outside of financial metrics that affect the happiness of an individual.
+The proportion of the variability in the response values that was accounted for by our regression model is given by the Multiple $R^2$ from the summary of our model, which is 0.6003. $R^2$ is calculated as the proportion of variance of fitted values over response values, which also results in the same value given the table above (0.6003 = 68.12/113.46). This $R^2$ value states that around 60.03% of the variance in happiness scores is explained by GDP per Capita. Although GDP per capita seems to be a strong predictor of happiness, the remaining 39.97% of the variance is unexplained, suggesting that there are other factors outside of financial metrics that affect the happiness of an individual.
 
 ## Predictive Checks
 
@@ -336,11 +332,11 @@ ggplot(full_data_long, aes(x = avgGDP, y = happiness_score)) +
 
 ```
 
-In both datasets, they show a positive relationship, reflecting the fact that countries with higher GDP per capita tend to report higher happiness scores. In both plots, the data seems to be clustered around the 40 to 50 happiness score range at lower GDP per capita values, and become more spread as GDP per capita increases. However, we can see that the points have a similar general shape.
+In both datasets, they show a positive relationship, reflecting the fact that countries with higher GDP per capita tend to report higher happiness scores. In both plots, the data seems to be clustered around the 40 to 50 happiness score range at lower GDP per capita values, and become more spread as GDP per capita increases. However, we can see that the simulated points have more spread overall. Additionally, we can see that the general trend of points in the simulated data is more steep than that of the observerd data.
 
-### Multiple Predictive Checks
+### 1000 Simulations
 
-To compare the simulated and observed happiness values, we can regress the observed values on the simulated values. The R^2 value is an indicator of how similar the simulated happiness values are to the observed values in each simulation. We can repeat this process 1000 times to get an idea of how well our model is performing. Below is a histogram that illustrates frequency of R^2 values of our simulations.
+To compare the simulated and observed happiness values, we can regress the observed values on the simulated values. The $R^2$ value is an indicator of how similar the simulated happiness values are to the observed values in each simulation. We can repeat this process 1000 times to get an idea of how well our model is performing. Below is a histogram that illustrates frequency of $R^2$ values of our simulations.
 
 ```{r}
 set.seed(4)
@@ -381,9 +377,19 @@ sim_r_squared_df |>
 
 ```
 
-From this plot of the distribution we can see that the majority of the R-squared values from the simulated datasets fall between 0.3 and 0.45 indicating that the linear regression provides a subpar fit to model the relationship between GDP per capita and Happiness score.
+From this plot of the distribution we can see that the majority of the $R^2$ values from the simulated datasets fall between 0.3 and 0.45 indicating that the linear regression provides a subpar fit to model the relationship between GDP per capita and Happiness score.
 
 ## Conclusion
+
+In our analysis of GDP per capita and happiness scores (2006-2023) we found a moderate positive correlation between the two.
+
+Our linear regression model shows that for every $1,000 increase in GDP per capita, happiness scores increase by approximately half a point. The model explains about 60% of happiness score variability, indicating that while economic prosperity contributes significantly to happiness, 40% of variation stems from other non-economic factors. 
+
+By simulating happiness scores based on our regression model, we observed that the simulated data closely mirrored the observed trends. However, the $R^2$ values from our simulations indicated that the linear model provides a suboptimal fit to the data. 
+
+The model's mediocrity could be explained by a large portion of the actual observations being concentrated in the lower end of GDP per capita values. Most of the values were concentrated in the 0 to 15000 international dollar range for GDP per capita, but there was a variety of happiness values within that range. This area represents the many impoverished countries in the world. 
+
+While GDP per capita is an important factor influencing happiness, it is not the sole determinant. All in all, it is likely that the political and economic state of the world are also contributing to the variations in happiness scores across countries. 
 
 
 
