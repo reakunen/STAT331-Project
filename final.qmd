@@ -213,6 +213,17 @@ Below is a table containing the coefficients of our fitted linear model.
 happiness_gdp_lm <- lm(avgHappiness ~ avgGDP, 
                  data = lm_data)
 
+```
+
+
+```{r}
+#| eval: False
+
+summary(happiness_gdp_lm) 
+```
+
+
+```{r}
 tidy(happiness_gdp_lm) |> 
   kable()
 ```
@@ -248,8 +259,6 @@ The linear regression model does illustrate the positive correlation trend betwe
 Beyond just observing the plot visually, we computed the variances between the model and the actual data. The table below contains the response, fitted, and residual variances.
 
 ```{r}
-
-
 model_data <- augment(happiness_gdp_lm)
 
 #Compute SpecifiedVariances
@@ -273,15 +282,15 @@ var_table |>
   row_spec(row = 0, bold = T, align = "c")
 ```
 
-The proportion of the variability in the response values that was accounted for by our regression model is given by the Multiple R-squared from the summary of our model, which is 0.5392. R-squared is calculated as the proportion of variance of fitted values over response values, which also results in the same value given the table above (0.5392 = 62.85/116.55). This R-squared value states that around 53.92% of the variance in happiness scores is explained by GDP per Capita. Although GDP per capita seems to be a strong predictor of happiness, the remaining 46.08% of the variance is unexplained, suggesting that there are other factors outside of financial metrics that affect the happiness of an individual.
+The proportion of the variability in the response values that was accounted for by our regression model is given by the Multiple R-squared from the summary of our model, which is 0.6003. R-squared is calculated as the proportion of variance of fitted values over response values, which also results in the same value given the table above (0.6003 = 68.12/113.46). This R-squared value states that around 60.03% of the variance in happiness scores is explained by GDP per Capita. Although GDP per capita seems to be a strong predictor of happiness, the remaining 39.97% of the variance is unexplained, suggesting that there are other factors outside of financial metrics that affect the happiness of an individual.
 
-## 3 Simulation
+## Predictive Checks
 
-In this section, we examine how well our linear regression model captures the relationship between GDP per capita and happiness scores by simulating data and comparing it to our observed data.
+Next, we examine how well our linear regression model captures the relationship between average GDP per capita and average happiness scores per country by simulating data and comparing it to our observed data.
 
-### 3.1 Visualizing Simulations from the Model
+We first generate predictions from our regression model, then add random noise based on the estimated residual standard error to create simulated happiness scores. These are our simulated observations.
 
-We first generate predictions from our regression model, then add random noise based on the estimated residual standard error to create simulated happiness scores.
+We created a plot of these simulated happiness scores v. the actual GDP per capita data. The side-by-side plots seen below show the relationship between GDP per capita and happiness scores for both our observed data (left) and a simulated dataset (right).
 
 ```{r}
 #| layout-ncol: 2
@@ -327,9 +336,11 @@ ggplot(full_data_long, aes(x = avgGDP, y = happiness_score)) +
 
 ```
 
-The side-by-side plots show the relationship between GDP per capita and happiness scores for both our observed data (left) and a simulated dataset (right). In both datasets, they show a positive relationship, reflecting the fact that countries with higher GDP per capita tend to report higher happiness scores. In both plots, the data seems to be clustered around the 40 to 50 happiness score range at lower GDP per capita values, and become more spread as GDP per capita increases. However we can see that the points have a similar general shape.
+In both datasets, they show a positive relationship, reflecting the fact that countries with higher GDP per capita tend to report higher happiness scores. In both plots, the data seems to be clustered around the 40 to 50 happiness score range at lower GDP per capita values, and become more spread as GDP per capita increases. However, we can see that the points have a similar general shape.
 
-### 3.2 Generating Multiple Predictive Checks
+### Multiple Predictive Checks
+
+To compare the simulated and observed happiness values, we can regress the observed values on the simulated values. The R^2 value is an indicator of how similar the simulated happiness values are to the observed values in each simulation. We can repeat this process 1000 times to get an idea of how well our model is performing. Below is a histogram that illustrates frequency of R^2 values of our simulations.
 
 ```{r}
 set.seed(4)
@@ -370,5 +381,9 @@ sim_r_squared_df |>
 
 ```
 
+From this plot of the distribution we can see that the majority of the R-squared values from the simulated datasets fall between 0.3 and 0.45 indicating that the linear regression provides a subpar fit to model the relationship between GDP per capita and Happiness score.
 
-  From this plot of the distribution we can see that the majority of the R-squared values from the simulated datasets fall between 0.3 and 0.45 indicating that the linear regression provides a subpar fit to model the relationship between GDP per capita and Happiness score.
+## Conclusion
+
+
+
