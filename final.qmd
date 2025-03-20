@@ -30,6 +30,7 @@ library(patchwork)
 library(gganimate)
 library(gifski)
 library(broom)
+library(purrr)
 library(kableExtra)
 ```
 
@@ -256,6 +257,9 @@ We first generate predictions from our regression model, then add random noise b
 ```{r}
 #| layout-ncol: 2
 
+# na.omit() from
+# https://stackoverflow.com/questions/4862178/remove-rows-with-all-or-some-nas-missing-values-in-data-frame
+
 pred_happiness <- predict(happiness_gdp_lm)
 
 sigma_val <- sigma(happiness_gdp_lm)
@@ -313,7 +317,30 @@ sim_and_r_square <- function(observed_data, observed_lm){
     na.omit() |>
     select(country, avgGDP, avgHappiness) |> 
     bind_cols(simulated_happiness)
+  
+  lm_obj <- lm(avgHappiness ~ sim_happiness, data = full_data) |>
+    glance()
+  
+  return(lm_obj$r.squared)
+    
 }
 
+sim_r_square <- map_dbl(.x = 1:1000,
+                     .f = ~ sim_and_r_square(lm_data, happiness_gdp_lm))
+
+sim_r_squared_df <- enframe(sim_r_square, value = "r_squared") 
+```
+
+```{r}
+sim_r_squared_df |>
+  ggplot(aes(x = r_squared)) +
+  geom_histogram(bins = 10, color = "steelblue", fill="lightblue") +
+    labs(x = "R-Squared Values",
+         y = "Frequency",
+         title = "Distribution of R-Squared Values",
+         subtitle = "From 1000 simulated regressions")
 
 ```
+
+
+From this plot of the distribution we can see that the majority of the R-squared values from the simulated datasets, fall between 0.3 and 0.45 indicating that the linear regression model is not great to model the relationship between GDP per capita and Happiness score.
